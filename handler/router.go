@@ -13,25 +13,41 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/httplog"
+	"github.com/rs/zerolog"
 	"github.com/segmentio/kafka-go"
 )
 
 var mode util.ServiceMode
+var httpLogger zerolog.Logger
 
 // Initializes the gin engine
 func InitRouter(m util.ServiceMode) http.Handler {
 	mode = m
 
+	// Logger
+	conciseLogging := false
+
+	if m == util.DebugMode {
+		conciseLogging = true
+	}
+
+	httpLogger = httplog.NewLogger("httplog-example", httplog.Options{
+		JSON:    true,
+		Concise: conciseLogging,
+	})
+
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(httplog.RequestLogger(httpLogger))
 	r.Use(middleware.Recoverer)
+
+	r.Use(middleware.Heartbeat("/healthz"))
 
 	// Set a timeout value on the request context (ctx), that will signal
 	// through ctx.Done() that the request has timed out and further
 	// processing should be stopped.
 	r.Use(middleware.Timeout(30 * time.Second))
 
-	r.Get("/healthz", healthCheckHandler)
 	r.Post("/produce", topicProduceHandler)
 
 	return r

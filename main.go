@@ -52,7 +52,7 @@ func main() {
 		port = "8080"
 	}
 
-	util.Sugar.Infof("Starting service in '%s' mode on port %d...", mode, port)
+	util.Sugar.Infof("Starting service in '%s' mode on port %s...", mode, port)
 
 	// Initialize kafka or panic if there was a problem
 	if err := downstream.Init(mode); err != nil {
