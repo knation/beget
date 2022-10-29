@@ -28,7 +28,8 @@ The project entrypoint may be found at `cmd/main.go`. You can run locally with: 
 beget uses [`viper`](https://github.com/spf13/viper) for managing configuration. This means that the configuration options below can also be provided via flag or ENV. Possible configuration options are:
 
 ```yaml
-mode: debug # Application run mode (debug|release). Default: debug
+app:
+  mode: debug # Application run mode (debug|release). Default: debug
 
 server:
   port: 8080 # Web service port. Default: 8080
