@@ -64,7 +64,7 @@ curl --request POST 'http://localhost:8080/produce' \
 | `key` | The message key. | No      |         |
 
 ## Health check
-The service will respond with a 200 status code on any request to `/healthz`. In "release" mode, these requests are not logged.
+The service will respond with a 200 status code on any request to `/healthz`.
 
 # Deploying
 
