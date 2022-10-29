@@ -3,7 +3,6 @@ package downstream_test
 import (
 	"beget/downstream"
 	"beget/util"
-	"os"
 	"testing"
 
 	"github.com/segmentio/kafka-go"
@@ -13,56 +12,53 @@ import (
 func TestInitDebug(t *testing.T) {
 
 	t.Run("no topics", func(t *testing.T) {
-		err := downstream.Init(util.DebugMode)
+		err := downstream.Init()
 
-		assert.EqualError(t, err, `no topics specified`)
+		assert.EqualError(t, err, "no topics provided")
 	})
 
 	t.Run("empty topics", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "")
-		err := downstream.Init(util.DebugMode)
+		err := downstream.Init()
 
-		assert.EqualError(t, err, `no topics specified`)
+		assert.EqualError(t, err, "no topics provided")
 	})
 
+	// Set to debug mode for next tests
+	util.Config.App.Mode = util.DebugMode
+
+	// Set sample topics
+	util.Config.Kafka.Topics = []string{"foo"}
+
 	t.Run("success in debug mode", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "foo")
-		err := downstream.Init(util.DebugMode)
+		err := downstream.Init()
 
 		assert.Nil(t, err)
-		assert.EqualValues(t, map[string]bool{"foo": true}, downstream.KafkaTopics)
+		assert.EqualValues(t, map[string]struct{}{"foo": {}}, downstream.KafkaTopics)
 
 		// Make sure close doesn't break
 		err = downstream.Close()
 		assert.Nil(t, err)
-
-		os.Setenv("KAFKA_TOPICS", "")
 	})
 
+	// Set to release mode for next tests
+	util.Config.App.Mode = util.ReleaseMode
+
 	t.Run("no brokers", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "foo")
+		err := downstream.Init()
 
-		err := downstream.Init(util.ReleaseMode)
-
-		assert.EqualError(t, err, `must provide either "KAFKA_BROKERS"`)
+		assert.EqualError(t, err, "no brokers provided")
 	})
 
 	t.Run("empty brokers", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "foo")
-		os.Setenv("KAFKA_BROKERS", "")
+		err := downstream.Init()
 
-		err := downstream.Init(util.ReleaseMode)
-
-		assert.EqualError(t, err, `must provide either "KAFKA_BROKERS"`)
-
-		os.Setenv("KAFKA_TOPICS", "")
+		assert.EqualError(t, err, "no brokers provided")
 	})
 
 	t.Run("single broker", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "foo")
-		os.Setenv("KAFKA_BROKERS", "broker.foo.com")
+		util.Config.Kafka.Brokers = []string{"broker.foo.com"}
 
-		err := downstream.Init(util.ReleaseMode)
+		err := downstream.Init()
 
 		assert.Nil(t, err)
 		assert.NotNil(t, downstream.KafkaWriter)
@@ -71,16 +67,12 @@ func TestInitDebug(t *testing.T) {
 		// Make sure close doesn't break
 		err = downstream.Close()
 		assert.Nil(t, err)
-
-		os.Setenv("KAFKA_TOPICS", "")
-		os.Setenv("KAFKA_BROKERS", "")
 	})
 
 	t.Run("multiple brokers", func(t *testing.T) {
-		os.Setenv("KAFKA_TOPICS", "foo")
-		os.Setenv("KAFKA_BROKERS", "broker.foo.com,broker.bar.com")
+		util.Config.Kafka.Brokers = []string{"broker.foo.com", "broker.bar.com"}
 
-		err := downstream.Init(util.ReleaseMode)
+		err := downstream.Init()
 
 		assert.Nil(t, err)
 		assert.NotNil(t, downstream.KafkaWriter)
@@ -89,10 +81,11 @@ func TestInitDebug(t *testing.T) {
 		// Make sure close doesn't break
 		err = downstream.Close()
 		assert.Nil(t, err)
-
-		os.Setenv("KAFKA_TOPICS", "")
-		os.Setenv("KAFKA_BROKERS", "")
 	})
+
+	// Reset config
+	util.Config.Kafka.Topics = []string{}
+	util.Config.Kafka.Brokers = []string{}
 }
 
 func TestKafkaProduce(t *testing.T) {

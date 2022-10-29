@@ -23,15 +23,26 @@ The idea with this project is to have a simple web service that does nothing but
 
 The project entrypoint may be found at `cmd/main.go`. You can run locally with: `TOPICS=events go run cmd/main.go`.
 
-## Environment Variables
+## Configuration
 
-| ENV Variable | Description                                                          | Required | Default |
-|--------------|----------------------------------------------------------------------|----------|---------|
-| `KAKFA_HOST` | Host address, when connecting w/o brokers (e.g., localhost:9092). Must provide this or `KAFKA_BROKERS`     | No       |         |
-| `KAKFA_BROKERS` | List of brokers. Must provide this or `KAFKA_HOST`.               | No       |         |
-| `TOPICS`     | Comma-separated list of topics to allow produces to.                 | Yes      |         |
-| `MODE`       | The mode to launch the application in. Accepts "release" or "debug". | No       | release |
-| `PORT`       | The port for the web service to listen on.                           | No       | 8080    |
+beget uses [`viper`](https://github.com/spf13/viper) for managing configuration. This means that the configuration options below can also be provided via flag or ENV. Possible configuration options are:
+
+```yaml
+mode: debug # Application run mode (debug|release). Default: debug
+
+server:
+  port: 8080 # Web service port. Default: 8080
+
+kafka:
+  brokers: # List of kafka brokers to connect o 
+    - broker1
+    - broker2
+    - ...
+  topics: # List of kafka topics to allow
+    - topic1
+    - topic2
+    - ...
+```
 
 In "debug" mode, the service does not connect to Kafka and messages are just logged.
 
@@ -48,16 +59,11 @@ curl --request POST 'http://localhost:8080/produce' \
 | Parameter | Description                          | Required | Default |
 |-----------|--------------------------------------|----------|---------|
 | `topic`   | The topic to produce the message to. | Yes      |         |
-| `message` | The message to produce to the topic. | Yes      |         |
+| `value` | The message to produce to the topic. | Yes      |         |
+| `key` | The message key. | No      |         |
 
 ## Health check
-The service will respond with a 200 status code on any request to `/healthz`. In "release" mode, these requests are not logged. You can change this behavior by uncommenting the lines at the top of the `main.go:releaseGinLogger` function.
-
-# Dependencies
-
-* [Gin Web Framework](https://github.com/gin-gonic/gin)
-* [kafka-go](https://github.com/segmentio/kafka-go)
-* [Zap](https://github.com/uber-go/zap) for logging
+The service will respond with a 200 status code on any request to `/healthz`. In "release" mode, these requests are not logged.
 
 # Deploying
 

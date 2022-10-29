@@ -2,7 +2,6 @@ package handler
 
 import (
 	"beget/downstream"
-	"beget/util"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -15,33 +14,15 @@ import (
 )
 
 func TestInitRouter(t *testing.T) {
-	r := InitRouter(util.DebugMode)
+	r := InitRouter()
 	assert.NotNil(t, r)
 }
 
-func TestHealthCheck(t *testing.T) {
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/healthz", nil)
-
-	healthCheckHandler(w, req)
-
-	res := w.Result()
-	defer res.Body.Close()
-	data, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Errorf("expected error to be nil got %v", err)
-	}
-
-	assert.Equal(t, 200, res.StatusCode)
-	assert.Equal(t, "OK", string(data))
-}
-
 func TestProduceHandlerFailure(t *testing.T) {
-	mode = util.DebugMode
 
 	results := make([]kafka.Message, 0)
 	stubKafkaProduce := downstream.KafkaProduce
-	downstream.KafkaProduce = func(mode util.ServiceMode, m kafka.Message) error {
+	downstream.KafkaProduce = func(m kafka.Message) error {
 		results = append(results, m)
 		return nil
 	}
@@ -67,9 +48,9 @@ func TestProduceHandlerFailure(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		downstream.KafkaTopics = make(map[string]bool)
-		downstream.KafkaTopics["foo"] = true
-		downstream.KafkaTopics["bar"] = true
+		downstream.KafkaTopics = make(map[string]struct{})
+		downstream.KafkaTopics["foo"] = struct{}{}
+		downstream.KafkaTopics["bar"] = struct{}{}
 
 		tests := []string{
 			`{"topic":"foo","value":{"foo":1}}`,
@@ -120,8 +101,7 @@ func TestProduceHandlerFailure(t *testing.T) {
 			}
 		}
 
-		downstream.KafkaTopics["foo"] = false
-		downstream.KafkaTopics["bar"] = false
+		downstream.KafkaTopics = make(map[string]struct{})
 	})
 
 	// Restore stubs

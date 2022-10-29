@@ -11,6 +11,7 @@ import (
 	"beget/util"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,57 +19,39 @@ import (
 	"time"
 )
 
-var mode util.ServiceMode
-
 func main() {
 
 	// Initialize logger
 	util.InitLogging()
 
-	// Read config
-	// if err := viper.ReadInConfig(); err != nil {
-	// 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-	// 		// Config file not found; ignore error if desired
-	// 		util.Sugar.Panic(errors.New("no configuration found"))
-	// 	} else {
-	// 		// Config file was found but another error was produced
-	// 		util.Sugar.Panic(errors.New("error parsing configuration"))
-	// 	}
-	// }
-
-	// Get mode to launch in: debug|release
-	switch os.Getenv("MODE") {
-	case "debug":
-		mode = util.DebugMode
-	case "release":
-		mode = util.ReleaseMode
-	default:
-		mode = util.DebugMode
-	}
-
-	// Get web server port
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	util.Sugar.Infof("Starting service in '%s' mode on port %d...", mode, port)
-
-	// Initialize kafka or panic if there was a problem
-	if err := downstream.Init(mode); err != nil {
+	// Load configuration
+	if err := util.InitConfig(); err != nil {
 		util.Sugar.Panic(err)
 	}
 
-	router := handler.InitRouter(mode)
+	// Get web server port
+	port := util.Config.Server.Port
+	if port <= 0 {
+		port = 8080
+	}
+
+	util.Sugar.Infof("Starting service in '%s' mode on port %d...", util.Config.App.Mode, port)
+
+	// Initialize kafka or panic if there was a problem
+	if err := downstream.Init(); err != nil {
+		util.Sugar.Panic(err)
+	}
+
+	router := handler.InitRouter()
 
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
 
 	// Start webserver in background to allow for graceful shutdown code below
 	go func() {
-		util.Sugar.Infof("Listening on port %v", port)
+		util.Sugar.Infof("Listening on port %d", port)
 		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			util.Sugar.Info(err.Error())
 		}

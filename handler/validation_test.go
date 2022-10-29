@@ -279,8 +279,8 @@ func TestInvalidBody(t *testing.T) {
 	})
 
 	t.Run("missing message value", func(t *testing.T) {
-		downstream.KafkaTopics = make(map[string]bool)
-		downstream.KafkaTopics["foo"] = true
+		downstream.KafkaTopics = make(map[string]struct{})
+		downstream.KafkaTopics["foo"] = struct{}{}
 
 		w := httptest.NewRecorder()
 
@@ -302,14 +302,14 @@ func TestInvalidBody(t *testing.T) {
 		assert.Equal(t, 400, res.StatusCode)
 		assert.Equal(t, "missing message value\n", string(data))
 
-		downstream.KafkaTopics = make(map[string]bool)
+		downstream.KafkaTopics = make(map[string]struct{})
 	})
 }
 
 func TestValidRequest(t *testing.T) {
 	t.Run("json", func(t *testing.T) {
-		downstream.KafkaTopics = make(map[string]bool)
-		downstream.KafkaTopics["foo"] = true
+		downstream.KafkaTopics = make(map[string]struct{})
+		downstream.KafkaTopics["foo"] = struct{}{}
 
 		w := httptest.NewRecorder()
 
@@ -318,7 +318,6 @@ func TestValidRequest(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		body, ok := validate(w, req)
-		downstream.KafkaTopics["foo"] = false
 
 		assert.True(t, ok)
 
@@ -332,12 +331,12 @@ func TestValidRequest(t *testing.T) {
 
 		assert.Equal(t, expected, body)
 
-		downstream.KafkaTopics = make(map[string]bool)
+		downstream.KafkaTopics = make(map[string]struct{})
 	})
 
 	t.Run("string", func(t *testing.T) {
-		downstream.KafkaTopics = make(map[string]bool)
-		downstream.KafkaTopics["foo"] = true
+		downstream.KafkaTopics = make(map[string]struct{})
+		downstream.KafkaTopics["foo"] = struct{}{}
 
 		w := httptest.NewRecorder()
 
@@ -346,7 +345,6 @@ func TestValidRequest(t *testing.T) {
 		req.Header.Add("Content-Type", "application/json")
 
 		body, ok := validate(w, req)
-		downstream.KafkaTopics["foo"] = false
 
 		assert.True(t, ok)
 
@@ -357,5 +355,7 @@ func TestValidRequest(t *testing.T) {
 		}
 
 		assert.Equal(t, expected, body)
+
+		downstream.KafkaTopics = make(map[string]struct{})
 	})
 }

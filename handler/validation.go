@@ -82,7 +82,7 @@ func validate(w http.ResponseWriter, r *http.Request) (*RequestBody, bool) {
 		// is an open issue regarding this at
 		// https://github.com/golang/go/issues/25956.
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			msg := fmt.Sprintf("Request body contains badly-formed JSON")
+			msg := "Request body contains badly-formed JSON"
 			http.Error(w, msg, http.StatusBadRequest)
 
 		// Catch any type errors, like trying to assign a string in the
@@ -138,7 +138,7 @@ func validate(w http.ResponseWriter, r *http.Request) (*RequestBody, bool) {
 	if b.Topic == "" {
 		http.Error(w, "missing topic", http.StatusBadRequest)
 		return nil, false
-	} else if !downstream.KafkaTopics[b.Topic] {
+	} else if _, ok := downstream.KafkaTopics[b.Topic]; !ok {
 		http.Error(w, "invalid topic", http.StatusBadRequest)
 		return nil, false
 	}
