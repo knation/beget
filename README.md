@@ -3,7 +3,8 @@ Go web service for producing to a Kafka topic over HTTP.
 **NOT FOR PRODUCTION USE**
 - Needs testing with live Kafka cluster, both with a single node and multiple brokers
 - Support for more Kafka connection options
-- Implement more robust configuration input via `viper`
+- Support for more http logging options
+- Increase testing coverage
 
 # Motivation
 In order to produce to a Kafka via HTTP, you need a proxy. You could use the [Confluent Rest Proxy](https://github.com/confluentinc/kafka-rest), but it can be difficult to configure and deploy. Also, if you want to transform/validate data or do anything else before producing, you'd need to have another service in front of it anyway.
