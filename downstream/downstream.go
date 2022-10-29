@@ -9,43 +9,34 @@ import (
 	"beget/util"
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"strings"
 
 	"github.com/segmentio/kafka-go"
 )
 
 var KafkaWriter *kafka.Writer
-var KafkaTopics map[string]bool
+var KafkaTopics map[string]struct{} = make(map[string]struct{})
 
 // Initializes the Kafka connection given env variables provided
-func Init(mode util.ServiceMode) error {
+func Init() error {
 
 	// Parse topics
-	KafkaTopics = make(map[string]bool)
-	if t := os.Getenv("KAFKA_TOPICS"); t != "" {
-		for _, topic := range strings.Split(t, ",") {
-			KafkaTopics[topic] = true
+	if len(util.Config.Kafka.Topics) > 0 {
+		for _, topic := range util.Config.Kafka.Topics {
+			KafkaTopics[topic] = struct{}{}
 		}
-
 	} else {
-		return fmt.Errorf("no topics specified")
+		return fmt.Errorf("no topics provided")
 	}
 
-	if mode == util.ReleaseMode {
+	if util.Config.App.Mode == util.ReleaseMode {
 		// Check for Kafka host or brokers
-		var kafkaHosts net.Addr
-		if b := os.Getenv("KAFKA_BROKERS"); b != "" {
-			kafkaHosts = kafka.TCP(strings.Split(b, ",")...)
-
-		} else {
-			return fmt.Errorf(`must provide either "KAFKA_BROKERS"`)
+		if len(util.Config.Kafka.Brokers) == 0 {
+			return fmt.Errorf("no brokers provided")
 		}
 
 		// All options can be found here: https://pkg.go.dev/github.com/segmentio/kafka-go?utm_source=godoc#Writer
 		KafkaWriter = &kafka.Writer{
-			Addr:     kafkaHosts,
+			Addr:     kafka.TCP(util.Config.Kafka.Brokers...),
 			Balancer: &kafka.LeastBytes{},
 		}
 	}
@@ -63,9 +54,9 @@ func Close() error {
 
 // Writes the given message to Kafka. This syntax allows us to stub the function
 // for testing.
-var KafkaProduce = func(mode util.ServiceMode, m kafka.Message) error {
+var KafkaProduce = func(m kafka.Message) error {
 	// If not in release mode, log message
-	if mode == util.DebugMode {
+	if util.Config.App.Mode == util.DebugMode {
 		util.Sugar.Debugf("PRODUCE: %v", m)
 		return nil
 	}

@@ -18,17 +18,15 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var mode util.ServiceMode
 var httpLogger zerolog.Logger
 
 // Initializes the gin engine
-func InitRouter(m util.ServiceMode) http.Handler {
-	mode = m
+func InitRouter() http.Handler {
 
 	// Logger
 	conciseLogging := false
 
-	if m == util.DebugMode {
+	if util.Config.App.Mode == util.DebugMode {
 		conciseLogging = true
 	}
 
@@ -53,11 +51,6 @@ func InitRouter(m util.ServiceMode) http.Handler {
 	return r
 }
 
-// Handler for health checks
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("OK"))
-}
-
 // Handles a request for topic production
 func topicProduceHandler(w http.ResponseWriter, r *http.Request) {
 	var body *RequestBody
@@ -76,7 +69,7 @@ func topicProduceHandler(w http.ResponseWriter, r *http.Request) {
 		message.Key = []byte(body.Key)
 	}
 
-	if err := downstream.KafkaProduce(mode, message); err != nil {
+	if err := downstream.KafkaProduce(message); err != nil {
 		util.Sugar.Error("failed to write kafka messages:", err)
 	}
 
