@@ -2,7 +2,6 @@ Go web service for producing to a Kafka topic over HTTP.
 
 **NOT FOR PRODUCTION USE**
 - Needs testing with live Kafka cluster, both with a single node and multiple brokers
-- Support for more Kafka connection options
 - Support for more http logging options
 - Increase testing coverage
 
@@ -36,11 +35,11 @@ server:
   port: 8080 # Web service port. Default: 8080
 
 kafka:
-  brokers: # List of kafka brokers to connect o 
+  brokers: # REQUIRED: List of kafka brokers to connect to 
     - broker1
     - broker2
     - ...
-  topics: # List of kafka topics to allow
+  topics: # REQUIRED: List of kafka topics to allow
     - topic1
     - topic2
     - ...
@@ -48,6 +47,17 @@ kafka:
 
 In "debug" mode, the service does not connect to Kafka and messages are just logged.
 
+### Kafka Configuration
+
+Additional Kafka options may be provided in the configuration file. See `util/config.go` for a full list of those supported. Note that option keys must be provided in snake case. For example:
+
+```yaml
+kafka:
+  ...
+  max_attempts: 3
+```
+
+`max_attempts` will map to the `MaxAttempts` option in the kafka writer.
 
 ## Producing to a topic
 To produce to a topic, make a `POST` request to `/produce`, passing the topic and message as JSON in the body. For example, to produce a simple message (`{"foo":"bar"}`) to the "events" topic:
