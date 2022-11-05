@@ -3,7 +3,6 @@ package handler
 import (
 	"beget/downstream"
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -85,11 +84,11 @@ func TestProduceHandlerFailure(t *testing.T) {
 			///
 			res := w.Result()
 			defer res.Body.Close()
-			data, err := ioutil.ReadAll(res.Body)
+			_, err := ioutil.ReadAll(res.Body)
 			if err != nil {
 				t.Errorf("expected error to be nil got %v", err)
 			}
-			fmt.Println(string(data))
+			// fmt.Println(string(data))
 			///
 		}
 

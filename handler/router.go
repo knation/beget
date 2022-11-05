@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/httplog"
 	"github.com/rs/zerolog"
 	"github.com/segmentio/kafka-go"
 )
@@ -23,20 +22,8 @@ var httpLogger zerolog.Logger
 // Initializes the gin engine
 func InitRouter() http.Handler {
 
-	// Logger
-	conciseLogging := false
-
-	if util.Config.App.Mode == util.DebugMode {
-		conciseLogging = true
-	}
-
-	httpLogger = httplog.NewLogger("httplog-example", httplog.Options{
-		JSON:    true,
-		Concise: conciseLogging,
-	})
-
 	r := chi.NewRouter()
-	r.Use(httplog.RequestLogger(httpLogger))
+	r.Use(util.HttpLogger)
 	r.Use(middleware.Recoverer)
 
 	r.Use(middleware.Heartbeat("/healthz"))

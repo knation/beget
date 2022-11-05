@@ -3,7 +3,6 @@ package downstream_test
 import (
 	"beget/downstream"
 	"beget/util"
-	"fmt"
 	"testing"
 	"time"
 
@@ -139,8 +138,6 @@ kafka:
 
 		err := util.InitConfigFromYaml(config)
 		assert.Nil(t, err)
-
-		fmt.Printf("%v\n", util.Config)
 
 		err = downstream.Init()
 		assert.Nil(t, err)

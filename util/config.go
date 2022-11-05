@@ -27,7 +27,8 @@ type Configuration struct {
 		Mode ServiceMode
 	}
 	Server struct {
-		Port int
+		Port        int
+		HttpLogging HttpLoggingConfig `mapstructure:"http_logging"`
 	}
 	Kafka KafkaWriterConfig
 }
@@ -106,6 +107,14 @@ type KafkaWriterConfig struct {
 
 	// AllowAutoTopicCreation notifies writer to create topic if missing.
 	AllowAutoTopicCreation bool `mapstructure:"allow_auto_topic_creation"`
+}
+
+type HttpLoggingConfig struct {
+	// Setting this to true will not log health checks
+	SkipHealthCheck bool `mapstructure:"skip_health_check"`
+
+	// Setting this to true will not log user agent
+	SkipUserAgent bool `mapstructure:"skip_user_agent"`
 }
 
 var Config Configuration

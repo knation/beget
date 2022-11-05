@@ -2,7 +2,6 @@ Go web service for producing to a Kafka topic over HTTP.
 
 **NOT FOR PRODUCTION USE**
 - Needs testing with live Kafka cluster, both with a single node and multiple brokers
-- Support for more http logging options
 - Increase testing coverage
 
 # Motivation
@@ -58,6 +57,19 @@ kafka:
 ```
 
 `max_attempts` will map to the `MaxAttempts` option in the kafka writer.
+
+### HTTP Logging Configuration
+
+This app implements a custom HTTP logging middleware (in `util/log.go`) that uses zap to log HTTP requests as well as all other application logs. Additional HTTP logging options may be provided in the configuration file. See `util/config.go` for a full list of those supported. Note that option keys must be provided in snake case. For example:
+
+```yaml
+server:
+  port: 8080
+  http_logging:
+    skip_health_check: true
+```
+
+`skip_health_check` will map to the `SkipHealthCheck` option.
 
 ## Producing to a topic
 To produce to a topic, make a `POST` request to `/produce`, passing the topic and message as JSON in the body. For example, to produce a simple message (`{"foo":"bar"}`) to the "events" topic:
