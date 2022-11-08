@@ -75,12 +75,12 @@ func Close() error {
 
 // Writes the given message to Kafka. This syntax allows us to stub the function
 // for testing.
-var KafkaProduce = func(m kafka.Message) error {
+var KafkaProduce = func(ctx context.Context, m kafka.Message) error {
 	// If not in release mode, log message
 	if util.Config.App.Mode == util.DebugMode {
 		util.Sugar.Debugf("PRODUCE: %v", m)
 		return nil
 	}
 
-	return KafkaWriter.WriteMessages(context.Background(), m)
+	return KafkaWriter.WriteMessages(ctx, m)
 }

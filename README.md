@@ -2,7 +2,8 @@ Go web service for producing to a Kafka topic over HTTP.
 
 **NOT FOR PRODUCTION USE**
 - Needs testing with live Kafka cluster, both with a single node and multiple brokers
-- Increase testing coverage
+- Need to test Kafka batching to ensure it behaves as expected. Specifically (A) what happens when the HTTP request times outs before write completes and (B) what if the batch isn't full when the request times out
+- Increase testing coverage (maybe?)
 
 # Motivation
 In order to produce to a Kafka via HTTP, you need a proxy. You could use the [Confluent Rest Proxy](https://github.com/confluentinc/kafka-rest), but it can be difficult to configure and deploy. Also, if you want to transform/validate data or do anything else before producing, you'd need to have another service in front of it anyway.
@@ -32,6 +33,7 @@ app:
 
 server:
   port: 8080 # Web service port. Default: 8080
+  timeout: 30 # Timeout in seconds. Default: 30
 
 kafka:
   brokers: # REQUIRED: List of kafka brokers to connect to 
@@ -58,6 +60,10 @@ kafka:
 
 `max_attempts` will map to the `MaxAttempts` option in the kafka writer.
 
+### Timeouts
+
+The HTTP timeout can be set via `server.timeout` in the configuration. This defaults to 30 seconds. Note that this timeout is just for the HTTP response. It is _not_ passed to the Kafka producer as we do not feel that an HTTP timeout should impact the message being written to Kafka. You can change this behavior in `topicProduceHandler` in `hander/router.go`.
+
 ### HTTP Logging Configuration
 
 This app implements a custom HTTP logging middleware (in `util/log.go`) that uses zap to log HTTP requests as well as all other application logs. Additional HTTP logging options may be provided in the configuration file. See `util/config.go` for a full list of those supported. Note that option keys must be provided in snake case. For example:
@@ -65,6 +71,7 @@ This app implements a custom HTTP logging middleware (in `util/log.go`) that use
 ```yaml
 server:
   port: 8080
+  timeout: 30
   http_logging:
     skip_health_check: true
 ```

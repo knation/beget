@@ -3,6 +3,7 @@ package handler
 import (
 	"beget/downstream"
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +22,7 @@ func TestProduceHandlerFailure(t *testing.T) {
 
 	results := make([]kafka.Message, 0)
 	stubKafkaProduce := downstream.KafkaProduce
-	downstream.KafkaProduce = func(m kafka.Message) error {
+	downstream.KafkaProduce = func(ctx context.Context, m kafka.Message) error {
 		results = append(results, m)
 		return nil
 	}

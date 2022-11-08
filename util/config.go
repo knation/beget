@@ -28,6 +28,7 @@ type Configuration struct {
 	}
 	Server struct {
 		Port        int
+		Timeout     int
 		HttpLogging HttpLoggingConfig `mapstructure:"http_logging"`
 	}
 	Kafka KafkaWriterConfig
@@ -162,6 +163,7 @@ func finalizeConfig() error {
 	// Set configuration defaults
 	viper.SetDefault("app.mode", "debug")
 	viper.SetDefault("server.port", 8080)
+	viper.SetDefault("server.timeout", 30)
 
 	// Get configuration into our `Config` variable
 	err := viper.Unmarshal(&Config)

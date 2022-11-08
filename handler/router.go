@@ -8,6 +8,7 @@ package handler
 import (
 	"beget/downstream"
 	"beget/util"
+	"context"
 	"net/http"
 	"time"
 
@@ -31,7 +32,7 @@ func InitRouter() http.Handler {
 	// Set a timeout value on the request context (ctx), that will signal
 	// through ctx.Done() that the request has timed out and further
 	// processing should be stopped.
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(middleware.Timeout(time.Duration(util.Config.Server.Timeout) * time.Second))
 
 	r.Post("/produce", topicProduceHandler)
 
@@ -43,6 +44,9 @@ func topicProduceHandler(w http.ResponseWriter, r *http.Request) {
 	var body *RequestBody
 	var ok bool
 
+	// NOTE: We expect that `validate` is not making any external requests or otherwise
+	// doing any long-running work. If that changes, it should become context aware
+	// to gracefully stop what it's doing immediately upon timeout
 	if body, ok = validate(w, r); !ok {
 		return
 	}
@@ -56,7 +60,10 @@ func topicProduceHandler(w http.ResponseWriter, r *http.Request) {
 		message.Key = []byte(body.Key)
 	}
 
-	if err := downstream.KafkaProduce(message); err != nil {
+	// NOTE: We intentionally do not pass `r.Context()` down the chain to the Kafka
+	// writer because we don't believe an HTTP timeout should cause writing to cease immediately.
+	// If you feel differently, can you change that below.
+	if err := downstream.KafkaProduce(context.Background(), message); err != nil {
 		util.Sugar.Error("failed to write kafka messages:", err)
 	}
 
