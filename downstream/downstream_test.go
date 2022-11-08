@@ -4,6 +4,7 @@ import (
 	"beget/downstream"
 	"beget/util"
 	"testing"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
@@ -81,6 +82,20 @@ func TestInitDebug(t *testing.T) {
 		// Make sure close doesn't break
 		err = downstream.Close()
 		assert.Nil(t, err)
+
+		// Test default writer options
+		stats := downstream.KafkaWriter.Stats()
+		assert.Equal(t, int64(0), stats.MaxAttempts)
+		assert.Equal(t, time.Duration(0), stats.WriteBackoffMin)
+		assert.Equal(t, time.Duration(0), stats.WriteBackoffMax)
+		assert.Equal(t, 0, downstream.KafkaWriter.BatchSize)
+		assert.Equal(t, int64(0), downstream.KafkaWriter.BatchBytes)
+		assert.Equal(t, time.Duration(0), stats.BatchTimeout)
+		assert.Equal(t, time.Duration(0), stats.ReadTimeout)
+		assert.Equal(t, time.Duration(0), stats.WriteTimeout)
+		assert.Equal(t, int64(0), stats.RequiredAcks)
+		assert.Equal(t, false, stats.Async)
+		assert.Equal(t, false, downstream.KafkaWriter.AllowAutoTopicCreation)
 	})
 
 	// Reset config
@@ -88,8 +103,57 @@ func TestInitDebug(t *testing.T) {
 	util.Config.Kafka.Brokers = []string{}
 }
 
-func TestKafkaProduce(t *testing.T) {
-	t.Run("debug", func(t *testing.T) {
+// func TestKafkaProduce(t *testing.T) {
+// 	t.Run("debug", func(t *testing.T) {
 
+// 	})
+// }
+
+func TestKafkaOverrideOptions(t *testing.T) {
+	t.Run("defaults", func(t *testing.T) {
+		config := `
+app:
+  mode: release
+
+server:
+  port: 8000
+
+kafka:
+  brokers:
+    - foo.bar.com
+  topics:
+    - foo
+  max_attempts: 11
+  write_backoff_min: 12
+  write_backoff_max: 113
+  batch_size: 14
+  batch_bytes: 15
+  batch_timeout: 16
+  read_timeout: 17
+  write_timeout: 18
+  required_acks: -1
+  async: true
+  allow_auto_topic_creation: true
+`
+
+		err := util.InitConfigFromYaml(config)
+		assert.Nil(t, err)
+
+		err = downstream.Init()
+		assert.Nil(t, err)
+
+		stats := downstream.KafkaWriter.Stats()
+
+		assert.Equal(t, int64(11), stats.MaxAttempts)
+		assert.Equal(t, time.Duration(12), stats.WriteBackoffMin)
+		assert.Equal(t, time.Duration(113), stats.WriteBackoffMax)
+		assert.Equal(t, 14, downstream.KafkaWriter.BatchSize)
+		assert.Equal(t, int64(15), downstream.KafkaWriter.BatchBytes)
+		assert.Equal(t, time.Duration(16), stats.BatchTimeout)
+		assert.Equal(t, time.Duration(17), stats.ReadTimeout)
+		assert.Equal(t, time.Duration(18), stats.WriteTimeout)
+		assert.Equal(t, int64(-1), stats.RequiredAcks)
+		assert.Equal(t, true, stats.Async)
+		assert.Equal(t, true, downstream.KafkaWriter.AllowAutoTopicCreation)
 	})
 }
